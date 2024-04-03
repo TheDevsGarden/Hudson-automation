@@ -1,4 +1,5 @@
-const express = require("express");
+const fs = require("fs"); //I will be using the file system
+const express = require("express"); //I will open a node server which will talk to the SQL database server
 const path = require("path");
 const mysql = require("mysql");
 const app = express();
@@ -6,7 +7,7 @@ const port = 3030;
 
 // Create a connection without a database
 const db = mysql.createConnection({
-  host: "127.0.0.1",
+  host: "127.0.0.1", //I am using mySQL on localhost. If you are using a different server, replace this with the server's IP address.
   user: "root",
   password: "Ahuntsic@2023!", //replace with your own password
 });
