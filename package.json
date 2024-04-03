@@ -4,18 +4,23 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node app.ts"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "express-session": "^1.17.3",
-    "mysql": "^2.18.1",
-    "path": "^0.12.7",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "csvtojson": "^2.0.10",
-    "nodemon": "^2.0.22"
+    "express": "^4.17.1",
+    "express-session": "^1.17.3",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.9.3",
+    "nodemon": "^2.0.22",
+    "path": "^0.12.7"
   },
   "author": "Ilya Belyaev",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
 }
