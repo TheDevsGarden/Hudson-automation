@@ -93,13 +93,63 @@ function readStockDataFromCSV(filePath) {
   });
 }
 
-// Function to calculate the daily percentage change in closing price for each stock
+function readStockDataFromCSV(filePath) {
+  return new Promise((resolve, reject) => {
+    const stockData = [];
+    const fileStream = fs.createReadStream(filePath);
+
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
+
+    let isFirstLine = true;
+
+    rl.on("line", (line) => {
+      if (isFirstLine) {
+        isFirstLine = false;
+        return;
+      }
+
+      const [Symbol, GivenDate, Open, High, Low, Close, Volume] = line.split(",");
+
+      // Convert the date
+      const dateParts = GivenDate.split("/");
+      const year = dateParts[2];
+      const month = ("0" + dateParts[0]).slice(-2);
+      const day = ("0" + dateParts[1]).slice(-2);
+      const formattedDate = `${year}-${month}-${day}`;
+
+      stockData.push({
+        Symbol,
+        Date: new Date(formattedDate),
+        Open: parseFloat(Open),
+        High: parseFloat(High),
+        Low: parseFloat(Low),
+        Close: parseFloat(Close),
+        Volume: parseFloat(Volume),
+      });
+    });
+
+    rl.on("close", () => {
+      // Sort the data by date and symbol
+      stockData.sort((a, b) => a.Date - b.Date || a.Symbol.localeCompare(b.Symbol));
+      resolve(stockData);
+    });
+
+    rl.on("error", (err) => {
+      reject(err);
+    });
+  });
+}
+
 function calculateDailyPercentageChange(stockData) {
   const dailyPercentageChange = new Map();
+  let prevSymbol = null;
+  let prevClose = null;
 
   for (const data of stockData) {
     const { Symbol, Date, Close } = data;
-    // Fomat the date as YYYY-MM-DD for MySQL
     const dateStr = Date.toISOString().split("T")[0];
 
     if (!dailyPercentageChange.has(Symbol)) {
@@ -108,43 +158,17 @@ function calculateDailyPercentageChange(stockData) {
 
     const symbolMap = dailyPercentageChange.get(Symbol);
 
-    // if (!symbolMap.has(dateStr)) {
-    //   symbolMap.set(dateStr, Close); // Initialize with previous close
-    // }
-
-    if (!symbolMap.has(dateStr)) {
-      // Find the first instance of this symbol
-      const firstClose = findFirstCloseForSymbol(stockData, Symbol, dateStr);
-
-      if (firstClose !== null) {
-        symbolMap.set(dateStr, firstClose); // Initialize with the actual first close
-      } else {
-        // Handle the case where no previous close can be found (see considerations below)
-        symbolMap.set(dateStr, Close); // You might choose a different default here
-      }
+    if (Symbol === prevSymbol) {
+      const percentageChange = prevClose !== null ? ((Close - prevClose) / prevClose) * 100 : 0;
+      symbolMap.set(dateStr, percentageChange);
     }
-    const prevClose = symbolMap.get(dateStr);
-    const percentageChange = prevClose !== 0 ? ((Close - prevClose) / prevClose) * 100 : 0;
-    // const percentageChange = ((Close - prevClose) / prevClose) * 100;
 
-    console.log(Symbol, dateStr, "Percentage Change:", percentageChange.toFixed(2));
-
-    symbolMap.set(dateStr, Close); // Update the current day's close price
-    dailyPercentageChange.get(Symbol).set(dateStr, percentageChange);
+    prevSymbol = Symbol;
+    prevClose = Close;
   }
 
   return dailyPercentageChange;
 }
-
-function findFirstCloseForSymbol(stockData, symbol, dateStr) {
-  for (let i = 0; i < stockData.length; i++) {
-    if (stockData[i].Symbol === symbol && stockData[i].Date.toISOString().split("T")[0] < dateStr) {
-      return stockData[i].Close;
-    }
-  }
-  return null;
-}
-
 // Function to identify the stock with the largest absolute percentage change for each day
 function findStockWithLargestMove(dailyPercentageChange) {
   const largestMovePerDay = new Map();
